@@ -13,7 +13,7 @@ const getRefreshToken = () => {
 
 // Create an Axios instance with default headers
 const axiosInstance = axios.create({
-  baseURL: "http://localhost:8080", // Adjust the base URL to match your API server
+  baseURL: "https://sthealth-server.onrender.com", // Adjust the base URL to match your API server
   headers: {
     "Content-Type": "application/json",
   },
