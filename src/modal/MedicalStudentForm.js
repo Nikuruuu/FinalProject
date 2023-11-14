@@ -571,15 +571,9 @@ const MedicalCheckupForm = (props) => {
                   <Grid item xs={12} sm={6} md={2}>
                     <ReadOnlyTextField
                       control={control}
-                      name="grade"
-                      label="Grade"
-                      value={
-                        selectedStudent
-                          ? selectedStudent.classProfile
-                            ? selectedStudent.classProfile.grade
-                            : selectedStudent.grade
-                          : ""
-                      }
+                      name="gender"
+                      label="Gender"
+                      value={selectedStudent ? selectedStudent.gender : ""}
                     />
                   </Grid>
                   <Grid item xs={12} sm={6} md={2}>
