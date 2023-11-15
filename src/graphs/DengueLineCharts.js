@@ -65,7 +65,11 @@ const LineChart = () => {
       try {
         const response = await axiosInstance.get("dengueMonitoring/fetch");
         const adjustedResponse = response.data.map((data) => {
-          const type = data.classEnrollment.classProfile.grade;
+          // Check for null or undefined values
+          const type =
+            data.classEnrollment && data.classEnrollment.classProfile
+              ? data.classEnrollment.classProfile.grade
+              : null; // or a default value
           return {
             ...data,
             type,

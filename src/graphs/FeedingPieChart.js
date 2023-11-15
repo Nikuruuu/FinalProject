@@ -124,7 +124,6 @@ const PieChart = () => {
     ]; // Filter out nulls
     return uniqueData;
   };
-
   const aggregateDataByReason = useCallback((rawData) => {
     const aggregatedData = {};
 
