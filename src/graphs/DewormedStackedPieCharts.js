@@ -1,6 +1,17 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { ResponsivePie } from "@nivo/pie";
-import { Paper, Box, Typography, Container, Grid, FormControl, InputLabel, Select, MenuItem, Autocomplete } from "@mui/material";
+import {
+  Paper,
+  Box,
+  Typography,
+  Container,
+  Grid,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  Autocomplete,
+} from "@mui/material";
 import axiosInstance from "../config/axios-instance.js";
 
 const PieChart = () => {
@@ -13,43 +24,83 @@ const PieChart = () => {
   const [originalData, setOriginalData] = useState([]);
   const [sy, setSy] = useState([]);
   const months = [
-    "January", "February", "March", "April", "May", "June",
-    "July", "August", "September", "October", "November", "December"
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
   ];
 
   const handleSyChange = (event) => {
     const year = event.target.value;
     setSelectedSy(year);
-  
-    getSpecifiedDateData(year, selectedMonth, selected4p, selectedGrade, selectedDew);
+
+    getSpecifiedDateData(
+      year,
+      selectedMonth,
+      selected4p,
+      selectedGrade,
+      selectedDew
+    );
   };
-  
+
   const handleMonthChange = (event) => {
     const month = event.target.value;
     setSelectedMonth(month);
 
-    getSpecifiedDateData(selectedSy, month, selected4p, selectedGrade, selectedDew);
+    getSpecifiedDateData(
+      selectedSy,
+      month,
+      selected4p,
+      selectedGrade,
+      selectedDew
+    );
   };
-  
+
   const handle4pChange = (event) => {
     const fourP = event.target.value;
     setSelected4p(fourP);
-  
-    getSpecifiedDateData(selectedSy, selectedMonth, fourP, selectedGrade, selectedDew);
+
+    getSpecifiedDateData(
+      selectedSy,
+      selectedMonth,
+      fourP,
+      selectedGrade,
+      selectedDew
+    );
   };
 
   const handleGradeChange = (event) => {
     const grade = event.target.value;
     setSelectedGrade(grade);
-  
-    getSpecifiedDateData(selectedSy, selectedMonth, selected4p, grade, selectedDew);
+
+    getSpecifiedDateData(
+      selectedSy,
+      selectedMonth,
+      selected4p,
+      grade,
+      selectedDew
+    );
   };
 
   const handleDewChange = (event) => {
     const deworming = event.target.value;
     setSelectedDew(deworming);
-  
-    getSpecifiedDateData(selectedSy, selectedMonth, selected4p, selectedGrade, deworming);
+
+    getSpecifiedDateData(
+      selectedSy,
+      selectedMonth,
+      selected4p,
+      selectedGrade,
+      deworming
+    );
   };
 
   useEffect(() => {
@@ -57,15 +108,15 @@ const PieChart = () => {
       try {
         const [syResponse, medicalResponse] = await Promise.all([
           axiosInstance.get("/academicYear/fetch"),
-          axiosInstance.get("/medicalCheckup/fetch")
+          axiosInstance.get("/medicalCheckup/fetch"),
         ]);
-   
+
         const syData = syResponse.data.map((year) => ({
           ...year,
           startYear: parseInt(year.schoolYear.substring(0, 4)), // Convert to integer
           endYear: parseInt(year.schoolYear.slice(-4)), // Convert to integer
         }));
-  
+
         const sySort = syData.sort(
           (a, b) => a.startYear - b.startYear || a.endYear - b.endYear
         );
@@ -86,17 +137,41 @@ const PieChart = () => {
   }, [selectedSy]);
 
   const extract4p = () => {
-    const uniqueData = [...new Set(originalData.map((item) => (item.classEnrollment.student.is4p ? "Yes" : "No")))];
+    const uniqueData = [
+      ...new Set(
+        originalData
+          .map((item) => {
+            if (item.classEnrollment && item.classEnrollment.student) {
+              return item.classEnrollment.student.is4p ? "Yes" : "No";
+            }
+            return null; // or some default value like "Unknown"
+          })
+          .filter((is4p) => is4p !== null) // Filter out nulls
+      ),
+    ];
     return uniqueData;
-  };  
+  };
 
   const extractGrades = () => {
-    const uniqueData = [...new Set(originalData.map((item) => item.classEnrollment.classProfile.grade))];
+    const uniqueData = [
+      ...new Set(
+        originalData
+          .map((item) => {
+            if (item.classEnrollment && item.classEnrollment.classProfile) {
+              return item.classEnrollment.classProfile.grade;
+            }
+            return null; // or some default value
+          })
+          .filter((grade) => grade !== null)
+      ),
+    ]; // Filter out nulls
     return uniqueData;
   };
 
   const extractDew = () => {
-    const uniqueData = [...new Set(originalData.map((item) => (item.deworming ? "Yes" : "No")))];
+    const uniqueData = [
+      ...new Set(originalData.map((item) => (item.deworming ? "Yes" : "No"))),
+    ];
     return uniqueData;
   };
 
@@ -119,27 +194,37 @@ const PieChart = () => {
     return Object.values(aggregatedData);
   }, []);
 
-  const getSpecifiedDateData = (selectedSy, selectedMonth, selected4p, selectedGrade, selectedDew) => {
+  const getSpecifiedDateData = (
+    selectedSy,
+    selectedMonth,
+    selected4p,
+    selectedGrade,
+    selectedDew
+  ) => {
     if (selectedSy) {
       const [startYear, endYear] = selectedSy.split(" - ").map(Number);
-  
-      const startMonth = sy.find((data) => data.startYear === startYear)?.startMonth || 1;
-      const endMonth = sy.find((data) => data.endYear === endYear)?.endMonth || 12;
-  
+
+      const startMonth =
+        sy.find((data) => data.startYear === startYear)?.startMonth || 1;
+      const endMonth =
+        sy.find((data) => data.endYear === endYear)?.endMonth || 12;
+
       if (!startMonth || !endMonth) {
-        console.error("Start month or end month not found for the selected school year.");
+        console.error(
+          "Start month or end month not found for the selected school year."
+        );
         return;
       }
-  
+
       const startMonthIndex = months.indexOf(startMonth);
       const endMonthIndex = months.indexOf(endMonth);
       const selectedMonthIndex = months.indexOf(selectedMonth);
-  
+
       const dateFilter = originalData.filter((item) => {
         const date = new Date(item.dateOfExamination);
         const year = date.getFullYear();
         const month = date.getMonth();
-  
+
         if (selectedMonth === "All") {
           if (
             (year === startYear && month >= startMonthIndex) ||
@@ -149,27 +234,38 @@ const PieChart = () => {
           }
         } else {
           if (
-            (year === startYear && month >= startMonthIndex && month === selectedMonthIndex) ||
-            (year === endYear && month <= endMonthIndex && month === selectedMonthIndex)
+            (year === startYear &&
+              month >= startMonthIndex &&
+              month === selectedMonthIndex) ||
+            (year === endYear &&
+              month <= endMonthIndex &&
+              month === selectedMonthIndex)
           ) {
             return true;
           }
         }
-  
+
         return false;
       });
-  
+
       let fourPFilter = dateFilter;
       let gradeFilter;
       let dewormingFilter;
 
-      fourPFilter = dateFilter.filter((item) => (item.classEnrollment.student.is4p ? "Yes" : "No") === selected4p);
-      gradeFilter = fourPFilter
+      fourPFilter = dateFilter.filter(
+        (item) =>
+          (item.classEnrollment.student.is4p ? "Yes" : "No") === selected4p
+      );
+      gradeFilter = fourPFilter;
       if (selectedGrade !== "All") {
-        gradeFilter = fourPFilter.filter((item) => item.classEnrollment.classProfile.grade === selectedGrade);     
+        gradeFilter = fourPFilter.filter(
+          (item) => item.classEnrollment.classProfile.grade === selectedGrade
+        );
       }
-      dewormingFilter = gradeFilter.filter((item) => (item.deworming ? "Yes" : "No") === selectedDew); 
-      
+      dewormingFilter = gradeFilter.filter(
+        (item) => (item.deworming ? "Yes" : "No") === selectedDew
+      );
+
       const aggregatedData = aggregateData(dewormingFilter);
       setData(aggregatedData);
     }
@@ -179,18 +275,20 @@ const PieChart = () => {
     if (data.length === 0) {
       return "No data available.";
     }
-  
+
     // Find the maximum value among all reasons (types)
     const maxCount = Math.max(...data.map((item) => item.value));
-  
+
     // Filter reasons (types) that have the maximum count
     const highest4p = data.filter((item) => item.value === maxCount);
     const schoolYearText = selectedSy || "Selected School Year";
-    const selectedMonthText = selectedMonth === "All" ? "all months" : `the month ${selectedMonth}`;
+    const selectedMonthText =
+      selectedMonth === "All" ? "all months" : `the month ${selectedMonth}`;
     const selected4pText = selected4p === "No" ? "non 4P" : `4P`;
     const selectedDewText = selected4p === "No" ? "non de-wormed" : `de-wormed`;
-    const selectedGradeText = selectedGrade === "All" ? "all grades" : `${selectedGrade}`;
-  
+    const selectedGradeText =
+      selectedGrade === "All" ? "all grades" : `${selectedGrade}`;
+
     if (highest4p.length === 1) {
       const { label, value } = highest4p[0];
       return `In the School Year ${schoolYearText}, ${selectedMonthText} registering the highest number of record(s) is ${label}, reflecting ${value} record/s. This surge predominantly pertains to ${selected4pText} member, ${selectedDewText} and in ${selectedGradeText}, signifying a prominent trend patient interactions during this period.`;
@@ -210,13 +308,17 @@ const PieChart = () => {
                 Mass De-worming Monitoring per Gender Analysis
               </Typography>
               <Typography variant="body1" paragraph>
-              It is Pie Chart that provides a focused distinction between Genders as being both 4p/ non 4p member/s and de-wormed/ non dew-wormed student/s on each section, allowing you to filter data by school year, month, section, 4P, and being de-wormed.
-
+                It is Pie Chart that provides a focused distinction between
+                Genders as being both 4p/ non 4p member/s and de-wormed/ non
+                dew-wormed student/s on each section, allowing you to filter
+                data by school year, month, section, 4P, and being de-wormed.
               </Typography>
               <Grid container spacing={2}>
                 <Grid item xs={12} sm={6}>
                   <FormControl variant="outlined" fullWidth>
-                    <InputLabel id="school-year-label">Select School Year</InputLabel>
+                    <InputLabel id="school-year-label">
+                      Select School Year
+                    </InputLabel>
                     <Select
                       labelId="school-year-label"
                       id="school-year-select"
@@ -226,7 +328,10 @@ const PieChart = () => {
                       style={{ minWidth: "200px" }}
                     >
                       {sy.map((data) => (
-                        <MenuItem key={data._id} value={`${data.startYear} - ${data.endYear}`}>
+                        <MenuItem
+                          key={data._id}
+                          value={`${data.startYear} - ${data.endYear}`}
+                        >
                           {`${data.startYear} - ${data.endYear}`}
                         </MenuItem>
                       ))}
@@ -244,9 +349,7 @@ const PieChart = () => {
                       label="Select Month"
                       style={{ minWidth: "200px" }}
                     >
-                      <MenuItem value="All">
-                        All Months
-                      </MenuItem>
+                      <MenuItem value="All">All Months</MenuItem>
                       {months.map((data, index) => (
                         <MenuItem key={index} value={data}>
                           {data}
@@ -255,10 +358,9 @@ const PieChart = () => {
                     </Select>
                   </FormControl>
                 </Grid>
-                
               </Grid>
-              <Grid container spacing={2} style={{ marginTop: '10px' }}>
-              <Grid item xs={12} sm={4}>
+              <Grid container spacing={2} style={{ marginTop: "10px" }}>
+                <Grid item xs={12} sm={4}>
                   <FormControl variant="outlined" fullWidth>
                     <InputLabel id="grade-label">Select Grade</InputLabel>
                     <Select
@@ -335,9 +437,16 @@ const PieChart = () => {
                     radialLabelsLinkHorizontalLength={24}
                     radialLabelsLinkStrokeWidth={1}
                     radialLabelsLinkColor={{ from: "color" }}
-                    theme={{ labels: { text: { fontSize: 15 } }}}
+                    theme={{ labels: { text: { fontSize: 15 } } }}
                     tooltip={({ datum }) => (
-                      <div style={{ background: "white", padding: "15px", border: "2px solid black", boxShadow: "0px 0px 5px rgba(0, 0, 0, 0.2)" }}>
+                      <div
+                        style={{
+                          background: "white",
+                          padding: "15px",
+                          border: "2px solid black",
+                          boxShadow: "0px 0px 5px rgba(0, 0, 0, 0.2)",
+                        }}
+                      >
                         Gender: <strong>{datum.id}</strong>
                         <br />
                         <br />
