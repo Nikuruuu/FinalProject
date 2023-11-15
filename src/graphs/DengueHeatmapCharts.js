@@ -1,6 +1,18 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { ResponsivePie } from "@nivo/pie";
-import { Paper, Box, Typography, Container, Grid, FormControl, InputLabel, Select, MenuItem, Autocomplete, TextField } from "@mui/material";
+import {
+  Paper,
+  Box,
+  Typography,
+  Container,
+  Grid,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  Autocomplete,
+  TextField,
+} from "@mui/material";
 import axiosInstance from "../config/axios-instance.js";
 
 const PieChart = () => {
@@ -11,8 +23,18 @@ const PieChart = () => {
   const [originalData, setOriginalData] = useState([]);
   const [schoolYears, setSchoolYears] = useState([]);
   const months = [
-    "January", "February", "March", "April", "May", "June",
-    "July", "August", "September", "October", "November", "December"
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
   ];
 
   const extractSchoolYears = (data) => {
@@ -27,7 +49,18 @@ const PieChart = () => {
   };
 
   const extractTypes = () => {
-    const uniqueTypes = [...new Set(originalData.map((item) => item.classEnrollment.classProfile.section))];
+    const uniqueTypes = [
+      ...new Set(
+        originalData
+          .map((item) => {
+            if (item.classEnrollment && item.classEnrollment.classProfile) {
+              return item.classEnrollment.classProfile.grade;
+            }
+            return null; // or a default value like "Unknown"
+          })
+          .filter((grade) => grade !== null) // Filter out nulls
+      ),
+    ];
     return uniqueTypes;
   };
 
@@ -35,7 +68,8 @@ const PieChart = () => {
     const aggregatedData = {};
 
     rawData.forEach((item) => {
-      const distinctChartData = item.classEnrollment.student.gender.toUpperCase();
+      const distinctChartData =
+        item.classEnrollment.student.gender.toUpperCase();
       if (!aggregatedData[distinctChartData]) {
         aggregatedData[distinctChartData] = {
           id: distinctChartData,
@@ -53,24 +87,30 @@ const PieChart = () => {
   const specifiedDateData = (selectedYear, selectedMonth, selectedType) => {
     if (selectedYear) {
       const [startYear, endYear] = selectedYear.split(" - ").map(Number);
-  
-      const startMonth = schoolYears.find((year) => year.syStartYear === startYear)?.syStartMonth || 1;
-      const endMonth = schoolYears.find((year) => year.syEndYear === endYear)?.syEndMonth || 12;
-  
+
+      const startMonth =
+        schoolYears.find((year) => year.syStartYear === startYear)
+          ?.syStartMonth || 1;
+      const endMonth =
+        schoolYears.find((year) => year.syEndYear === endYear)?.syEndMonth ||
+        12;
+
       if (!startMonth || !endMonth) {
-        console.error("Start month or end month not found for the selected school year.");
+        console.error(
+          "Start month or end month not found for the selected school year."
+        );
         return;
       }
-  
+
       const startMonthIndex = months.indexOf(startMonth);
       const endMonthIndex = months.indexOf(endMonth);
       const selectedMonthIndex = months.indexOf(selectedMonth);
-  
+
       const filteredData = originalData.filter((item) => {
         const basedDate = new Date(item.dateOfOnset);
         const basedDateYr = basedDate.getFullYear();
         const basedDateMth = basedDate.getMonth();
-        
+
         if (selectedMonth === "All") {
           if (
             (basedDateYr === startYear && basedDateMth >= startMonthIndex) ||
@@ -80,40 +120,49 @@ const PieChart = () => {
           }
         } else {
           if (
-            (basedDateYr === startYear && basedDateMth >= startMonthIndex && basedDateMth === selectedMonthIndex) ||
-            (basedDateYr === endYear && basedDateMth <= endMonthIndex && basedDateMth === selectedMonthIndex)
+            (basedDateYr === startYear &&
+              basedDateMth >= startMonthIndex &&
+              basedDateMth === selectedMonthIndex) ||
+            (basedDateYr === endYear &&
+              basedDateMth <= endMonthIndex &&
+              basedDateMth === selectedMonthIndex)
           ) {
             return true;
           }
         }
-  
+
         return false;
       });
-  
-      const typeFilter = selectedType === "All" ? filteredData : filteredData.filter((item) => item.classEnrollment.classProfile.section === selectedType);
+
+      const typeFilter =
+        selectedType === "All"
+          ? filteredData
+          : filteredData.filter(
+              (item) =>
+                item.classEnrollment.classProfile.section === selectedType
+            );
       const aggregatedData = aggregateDataByReason(typeFilter);
       setData(aggregatedData);
     }
   };
-  
-  
+
   const handleSchoolYearChange = (event) => {
     const year = event.target.value;
     setSelectedSchoolYear(year);
-  
+
     specifiedDateData(year, selectedMonth, selectedType);
   };
-  
+
   const handleMonthChange = (event) => {
     const month = event.target.value;
     setSelectedMonth(month);
-  
+
     specifiedDateData(selectedSchoolYear, month, selectedType);
   };
-  
+
   const handleTypeChange = (event, newValue) => {
     setSelectedType(newValue);
-  
+
     specifiedDateData(selectedSchoolYear, selectedMonth, newValue);
   };
 
@@ -121,40 +170,43 @@ const PieChart = () => {
     if (data.length === 0) {
       return "No data available for the selected school year.";
     }
-  
+
     // Find the maximum value among all reasons (types)
     const maxCount = Math.max(...data.map((item) => item.value));
-  
+
     // Filter reasons (types) that have the maximum count
     const highestTypes = data.filter((item) => item.value === maxCount);
-  
+
     const schoolYearText = selectedSchoolYear || "Selected School Year";
-    const selectedMonthText = selectedMonth === "All" ? "all months" : `the month of ${selectedMonth}`;
+    const selectedMonthText =
+      selectedMonth === "All" ? "all months" : `the month of ${selectedMonth}`;
     const selectedTypeText = `the section ${selectedType}`;
-  
+
     if (highestTypes.length === 1) {
       const { label, value } = highestTypes[0];
       return `In the School Year ${schoolYearText}, ${selectedMonthText} registering the highest number of record(s) is ${label}, reflecting ${value} dengue infection/s. This surge predominantly pertains to ${selectedTypeText}, signifying a prominent trend in patient interactions during this period.`;
     } else {
-      const highestTypeLabels = highestTypes.map((item) => item.label).join(", ");
+      const highestTypeLabels = highestTypes
+        .map((item) => item.label)
+        .join(", ");
       return `In the School Year ${schoolYearText}, ${selectedMonthText} registering the highest number of record(s) are ${highestTypeLabels}, reflecting ${maxCount} dengue infection/s. This surge predominantly pertains to ${selectedTypeText}, signifying a prominent trend in patient interactions during this period.`;
     }
-  };  
+  };
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         const [schoolYearResponse, checkupResponse] = await Promise.all([
           axiosInstance.get("/academicYear/fetch"),
-          axiosInstance.get("/dengueMonitoring/fetch")
+          axiosInstance.get("/dengueMonitoring/fetch"),
         ]);
-   
+
         const schoolYearsData = schoolYearResponse.data.map((year) => ({
           ...year,
           syStartYear: parseInt(year.schoolYear.substring(0, 4)), // Convert to integer
           syEndYear: parseInt(year.schoolYear.slice(-4)), // Convert to integer
         }));
-  
+
         const sortedSchoolYears = schoolYearsData.sort(
           (a, b) => a.syStartYear - b.syStartYear || a.syEndYear - b.syEndYear
         );
@@ -163,8 +215,12 @@ const PieChart = () => {
         setOriginalData(checkupResponse.data);
 
         if (!selectedSchoolYear && sortedSchoolYears.length > 0) {
-          setSelectedSchoolYear(`${sortedSchoolYears[0].syStartYear} - ${sortedSchoolYears[0].syEndYear}`);
-          specifiedDateData(`${sortedSchoolYears[0].syStartYear} - ${sortedSchoolYears[0].syEndYear}`);
+          setSelectedSchoolYear(
+            `${sortedSchoolYears[0].syStartYear} - ${sortedSchoolYears[0].syEndYear}`
+          );
+          specifiedDateData(
+            `${sortedSchoolYears[0].syStartYear} - ${sortedSchoolYears[0].syEndYear}`
+          );
         }
       } catch (error) {
         console.error("Error fetching data:", error);
@@ -181,15 +237,19 @@ const PieChart = () => {
           <Paper elevation={3}>
             <Box p={3}>
               <Typography variant="h4" gutterBottom>
-              Dengue Monitoring per Gender Analysis
+                Dengue Monitoring per Gender Analysis
               </Typography>
               <Typography variant="body1" paragraph>
-              It is Pie Chart that provides a focused distinction between Male and Female of Dengue infected student/s, allowing you to filter data by school year, month, and section.
+                It is Pie Chart that provides a focused distinction between Male
+                and Female of Dengue infected student/s, allowing you to filter
+                data by school year, month, and section.
               </Typography>
               <Grid container spacing={2}>
                 <Grid item xs={12} sm={4}>
                   <FormControl variant="outlined" fullWidth>
-                    <InputLabel id="school-year-label">Select School Year</InputLabel>
+                    <InputLabel id="school-year-label">
+                      Select School Year
+                    </InputLabel>
                     <Select
                       labelId="school-year-label"
                       id="school-year-select"
@@ -199,7 +259,10 @@ const PieChart = () => {
                       style={{ minWidth: "200px" }}
                     >
                       {schoolYears.map((year) => (
-                        <MenuItem key={year._id} value={`${year.syStartYear} - ${year.syEndYear}`}>
+                        <MenuItem
+                          key={year._id}
+                          value={`${year.syStartYear} - ${year.syEndYear}`}
+                        >
                           {`${year.syStartYear} - ${year.syEndYear}`}
                         </MenuItem>
                       ))}
@@ -217,9 +280,7 @@ const PieChart = () => {
                       label="Select Month"
                       style={{ minWidth: "200px" }}
                     >
-                      <MenuItem value="All">
-                        All Months
-                      </MenuItem>
+                      <MenuItem value="All">All Months</MenuItem>
                       {months.map((month, index) => (
                         <MenuItem key={index} value={month}>
                           {month}
@@ -230,14 +291,19 @@ const PieChart = () => {
                 </Grid>
                 <Grid item xs={12} sm={4}>
                   <FormControl variant="outlined" fullWidth>
-                    
                     <Autocomplete
-                    id="type-select"
-                    value={selectedType}
-                    onChange={handleTypeChange}
-                    options={extractTypes()}
-                    renderInput={(params) => <TextField {...params} label="Select Type" variant="outlined" />}
-                  />
+                      id="type-select"
+                      value={selectedType}
+                      onChange={handleTypeChange}
+                      options={extractTypes()}
+                      renderInput={(params) => (
+                        <TextField
+                          {...params}
+                          label="Select Type"
+                          variant="outlined"
+                        />
+                      )}
+                    />
                   </FormControl>
                 </Grid>
               </Grid>
@@ -259,9 +325,16 @@ const PieChart = () => {
                     radialLabelsLinkHorizontalLength={24}
                     radialLabelsLinkStrokeWidth={1}
                     radialLabelsLinkColor={{ from: "color" }}
-                    theme={{ labels: { text: { fontSize: 15 } }}}
+                    theme={{ labels: { text: { fontSize: 15 } } }}
                     tooltip={({ datum }) => (
-                      <div style={{ background: "white", padding: "15px", border: "2px solid black", boxShadow: "0px 0px 5px rgba(0, 0, 0, 0.2)" }}>
+                      <div
+                        style={{
+                          background: "white",
+                          padding: "15px",
+                          border: "2px solid black",
+                          boxShadow: "0px 0px 5px rgba(0, 0, 0, 0.2)",
+                        }}
+                      >
                         Gender: <strong>{datum.id}</strong>
                         <br />
                         <br />
